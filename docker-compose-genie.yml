@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: genie-postgres
+    environment:
+      POSTGRES_DB: genie
+      POSTGRES_USER: genie
+      POSTGRES_PASSWORD: genie_password_change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - genie_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U genie"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - genie
+
+  nats:
+    image: nats:latest
+    container_name: genie-nats
+    command: -js -sd /nats/data
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - genie_nats_data:/nats/data
+    networks:
+      - genie
+
+volumes:
+  genie_postgres_data:
+  genie_nats_data:
+
+networks:
+  genie:
+    driver: bridge

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: omni-postgres
+    environment:
+      POSTGRES_DB: omni
+      POSTGRES_USER: omni
+      POSTGRES_PASSWORD: omni_password_change_me
+    ports:
+      - "5433:5432"
+    volumes:
+      - omni_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omni"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - omni
+
+  nats:
+    image: nats:latest
+    container_name: omni-nats
+    command: -js -sd /nats/data
+    ports:
+      - "4223:4222"
+      - "8223:8222"
+    volumes:
+      - omni_nats_data:/nats/data
+    networks:
+      - omni
+
+volumes:
+  omni_postgres_data:
+  omni_nats_data:
+
+networks:
+  omni:
+    driver: bridge
