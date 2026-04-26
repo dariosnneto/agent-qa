@@ -2,7 +2,7 @@ import { setupInstance } from './setup';
 import { OmniClient } from './omni-client';
 import { runScenario } from './runner';
 import { generateReport } from './reporter';
-import { TrelloClient } from './trello-client';
+import { GitHubClient } from './github-client';
 import { onboardingScenario, cotacaoPFScenario, cotacaoPJScenario } from './scenarios';
 import type { ScenarioResult } from './types';
 
@@ -13,10 +13,8 @@ const {
   EUGENIA_PHONE,
   DEV_PHONE,
   ANTHROPIC_API_KEY,
-  TRELLO_API_KEY,
-  TRELLO_TOKEN,
-  TRELLO_BOARD_ID,
-  TRELLO_LIST_NAME = 'Bugs',
+  GITHUB_TOKEN,
+  GITHUB_REPO,
 } = process.env;
 
 if (!OMNI_API_KEY || !EUGENIA_PHONE || !DEV_PHONE || !ANTHROPIC_API_KEY) {
@@ -51,11 +49,11 @@ async function main() {
   const passed = scenarioResults.reduce((s, sc) => s + sc.passCount, 0);
   console.log(`\n📊 Total: ${passed}/${total} passou`);
 
-  const trello = TRELLO_API_KEY && TRELLO_TOKEN && TRELLO_BOARD_ID
-    ? new TrelloClient({ apiKey: TRELLO_API_KEY, token: TRELLO_TOKEN, boardId: TRELLO_BOARD_ID, listName: TRELLO_LIST_NAME })
+  const github = GITHUB_TOKEN && GITHUB_REPO
+    ? new GitHubClient({ token: GITHUB_TOKEN, repo: GITHUB_REPO })
     : undefined;
 
-  await generateReport(scenarioResults, omni, DEV_PHONE!, trello);
+  await generateReport(scenarioResults, omni, DEV_PHONE!, github);
   console.log('\n✅ QA concluído!');
 }
 

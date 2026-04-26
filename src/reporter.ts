@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import type { ScenarioResult, TestResult } from './types';
 import type { OmniClient } from './omni-client';
-import type { TrelloClient } from './trello-client';
+import type { GitHubClient } from './github-client';
 
 function statusIcon(status: TestResult['status']): string {
   switch (status) {
@@ -81,7 +81,7 @@ export async function generateReport(
   scenarioResults: ScenarioResult[],
   omni: OmniClient,
   devPhone: string,
-  trello?: TrelloClient,
+  github?: GitHubClient,
 ): Promise<string> {
   const reportsDir = resolve(process.cwd(), 'reports');
   mkdirSync(reportsDir, { recursive: true });
@@ -95,28 +95,28 @@ export async function generateReport(
   writeFileSync(filePath, buildMarkdown(scenarioResults), 'utf8');
   console.log(`\n📄 Relatório salvo: ${filePath}`);
 
-  if (trello) {
+  if (github) {
     const bugs = scenarioResults.flatMap(sc =>
       sc.results.filter(r => r.status !== 'pass' && r.fixSuggestion),
     );
-    let cardCount = 0;
+    let issueCount = 0;
     for (const bug of bugs) {
       try {
-        const url = await trello.createBugCard(
+        const url = await github.createBugIssue(
           bug.testCase.id,
           bug.testCase.message,
           bug.reason,
           bug.response,
           bug.fixSuggestion,
         );
-        console.log(`🃏 Card criado: ${url}`);
-        cardCount++;
+        console.log(`🐛 Issue criada: ${url}`);
+        issueCount++;
       } catch (err) {
-        console.warn(`⚠️  Trello [${bug.testCase.id}]: ${err instanceof Error ? err.message : err}`);
+        console.warn(`⚠️  GitHub [${bug.testCase.id}]: ${err instanceof Error ? err.message : err}`);
       }
     }
-    if (cardCount > 0) {
-      console.log(`🃏 ${cardCount} card${cardCount !== 1 ? 's' : ''} criado${cardCount !== 1 ? 's' : ''} no Trello`);
+    if (issueCount > 0) {
+      console.log(`🐛 ${issueCount} issue${issueCount !== 1 ? 's' : ''} criada${issueCount !== 1 ? 's' : ''} no GitHub`);
     }
   }
 
