@@ -65,6 +65,9 @@ AgentQA/
 │       ├── 02-cotacao-pf.ts
 │       ├── 03-cotacao-pj.ts
 │       └── index.ts
+├── .github/
+│   └── workflows/
+│       └── qa.yml                # CI — runs QA suite on every Eugênia change
 ├── scripts/
 │   ├── start-eugenia.sh      # start Eugênia webhook server via WSL/Bun
 │   ├── start-omni.sh         # start Omni API via WSL/Bun
