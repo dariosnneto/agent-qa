@@ -233,6 +233,33 @@ Switching modes requires only a `.env` change — no code changes.
 
 ---
 
+## CI — GitHub Actions
+
+The workflow at `.github/workflows/qa.yml` runs automatically on every push or pull request that touches Eugênia's core files:
+
+- `src/eugenia-webhook.ts`
+- `src/index.ts`, `src/scenarios.ts`, `src/evaluator.ts`
+
+**What it does:**
+
+1. Installs dependencies with Bun
+2. Starts Eugênia as a background service
+3. Waits for the server to be ready (health check with retry)
+4. Runs the full 30-case test suite
+5. Uploads the generated report as a build artifact (kept for 30 days)
+
+**Required secrets** (`Settings → Secrets → Actions`):
+
+| Secret | Value |
+|---|---|
+| `ANTHROPIC_API_KEY` | Your Anthropic API key |
+| `DEV_PHONE` | Developer's phone for notifications |
+| `GH_TOKEN` | GitHub PAT with `repo` scope (for auto-creating issues) |
+
+You can also trigger it manually via **Actions → QA Eugênia → Run workflow**.
+
+---
+
 ## Tech Stack
 
 | Tool | Role |
@@ -242,6 +269,7 @@ Switching modes requires only a `.env` change — no code changes.
 | [Claude Haiku](https://anthropic.com) | Evaluator + Eugênia's brain |
 | [Omni](https://github.com/automagik-dev/omni) | WhatsApp channel management (optional) |
 | [GitHub Issues](https://docs.github.com/en/rest/issues) | Automatic bug tracking — one issue per failed test, labelled `bug` |
+| [GitHub Actions](https://docs.github.com/en/actions) | CI — runs QA suite on every change to Eugênia |
 
 ---
 
