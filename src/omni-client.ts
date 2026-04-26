@@ -1,8 +1,9 @@
 import { createOmniClient } from '@omni/sdk';
+import type { MessagingClient } from './runner';
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
-export class OmniClient {
+export class OmniClient implements MessagingClient {
   private readonly omni: ReturnType<typeof createOmniClient>;
   private readonly instanceId: string;
   private readonly eugeniaPhone: string;
@@ -19,11 +20,6 @@ export class OmniClient {
     return status.isConnected;
   }
 
-  /**
-   * Sends a message to Eugênia and waits for her reply.
-   * On the first call, lazily resolves the chat ID from the instance's chat list.
-   * Returns the full reply text (joining multi-message responses), or null on timeout.
-   */
   async sendAndPoll(text: string, timeoutMs = 30_000): Promise<string | null> {
     const sentAt = new Date().toISOString();
 
@@ -40,18 +36,10 @@ export class OmniClient {
     return this.pollResponse(this.eugeniaChatId, sentAt, timeoutMs);
   }
 
-  /**
-   * Sends a message to an arbitrary number (used for dev notifications).
-   */
   async sendNotification(to: string, text: string): Promise<void> {
     await this.omni.messages.send({ instanceId: this.instanceId, to, text });
   }
 
-  /**
-   * Scans instance chats for one matching Eugênia's phone number.
-   * Retries until timeout because the chat only appears after the first message is sent.
-   * Throws if the chat cannot be found — callers should treat this as a setup error, not a timeout.
-   */
   async findChatId(timeoutMs = 30_000): Promise<string> {
     const phone = this.eugeniaPhone.replace(/\D/g, '');
     // Brazil mobile numbers may be stored without the leading 9 (old 8-digit format)
@@ -85,7 +73,6 @@ export class OmniClient {
       const replies = messages.filter(m => !m.isFromMe && m.textContent);
 
       if (replies.length > 0) {
-        // Wait briefly to collect multi-part responses
         await sleep(1_500);
         const more = await this.omni.chats.getMessages(chatId, { after, limit: 10 });
         return more

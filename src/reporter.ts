@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import type { ScenarioResult, TestResult } from './types';
-import type { OmniClient } from './omni-client';
+import type { MessagingClient } from './runner';
 import type { GitHubClient } from './github-client';
 
 function statusIcon(status: TestResult['status']): string {
@@ -79,7 +79,7 @@ function buildWhatsAppSummary(scenarioResults: ScenarioResult[], filePath: strin
 
 export async function generateReport(
   scenarioResults: ScenarioResult[],
-  omni: OmniClient,
+  client: MessagingClient | null,
   devPhone: string,
   github?: GitHubClient,
 ): Promise<string> {
@@ -120,9 +120,11 @@ export async function generateReport(
     }
   }
 
-  const summary = buildWhatsAppSummary(scenarioResults, displayPath);
-  await omni.sendNotification(devPhone, summary);
-  console.log(`📱 Notificação enviada para ${devPhone}`);
+  if (client && devPhone) {
+    const summary = buildWhatsAppSummary(scenarioResults, displayPath);
+    await client.sendNotification(devPhone, summary);
+    console.log(`📱 Notificação enviada para ${devPhone}`);
+  }
 
   return filePath;
 }

@@ -1,3 +1,10 @@
 node_modules/
 reports/
+data/
 .env
+*.log
+*.png
+README.ptbr.md
+review-report.md
+docs/
+gen-pdfs.mjs

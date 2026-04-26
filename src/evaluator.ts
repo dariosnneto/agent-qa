@@ -50,7 +50,8 @@ export async function evaluate(testCase: TestCase, response: string): Promise<Ev
       ],
     });
 
-    const raw = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '{}';
+    const rawText = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '{}';
+    const raw = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     const parsed = JSON.parse(raw) as {
       pass: boolean;
       score: number;

@@ -1,4 +1,3 @@
-import { OmniClient } from './omni-client';
 import { evaluate } from './evaluator';
 import type { TestCase, TestResult, ScenarioResult } from './types';
 
@@ -9,20 +8,26 @@ const BETWEEN_TESTS_MS = 3_000;
 const RECONNECT_ATTEMPTS = 3;
 const RECONNECT_WAIT_MS = 10_000;
 
-async function ensureConnected(omni: OmniClient): Promise<void> {
-  for (let attempt = 1; attempt <= RECONNECT_ATTEMPTS; attempt++) {
-    if (await omni.isConnected()) return;
-    console.warn(`\n⚠️  WhatsApp desconectado. Aguardando reconexão (${attempt}/${RECONNECT_ATTEMPTS})...`);
-    await sleep(RECONNECT_WAIT_MS);
-  }
-  throw new Error('WhatsApp não reconectou após 3 tentativas. Abortando.');
+export interface MessagingClient {
+  isConnected(): Promise<boolean>;
+  sendAndPoll(text: string, timeoutMs?: number): Promise<string | null>;
+  sendNotification(to: string, text: string): Promise<void>;
 }
 
-async function runTest(omni: OmniClient, testCase: TestCase): Promise<TestResult> {
+async function ensureConnected(client: MessagingClient): Promise<void> {
+  for (let attempt = 1; attempt <= RECONNECT_ATTEMPTS; attempt++) {
+    if (await client.isConnected()) return;
+    console.warn(`\n⚠️  Cliente desconectado. Aguardando reconexão (${attempt}/${RECONNECT_ATTEMPTS})...`);
+    await sleep(RECONNECT_WAIT_MS);
+  }
+  throw new Error('Cliente não reconectou após 3 tentativas. Abortando.');
+}
+
+async function runTest(client: MessagingClient, testCase: TestCase): Promise<TestResult> {
   const start = Date.now();
 
   try {
-    const response = await omni.sendAndPoll(testCase.message, POLL_TIMEOUT_MS);
+    const response = await client.sendAndPoll(testCase.message, POLL_TIMEOUT_MS);
 
     if (response === null) {
       return {
@@ -64,7 +69,7 @@ async function runTest(omni: OmniClient, testCase: TestCase): Promise<TestResult
 }
 
 export async function runScenario(
-  omni: OmniClient,
+  client: MessagingClient,
   name: string,
   testCases: TestCase[],
 ): Promise<ScenarioResult> {
@@ -72,10 +77,10 @@ export async function runScenario(
 
   for (let i = 0; i < testCases.length; i++) {
     const testCase = testCases[i];
-    await ensureConnected(omni);
+    await ensureConnected(client);
 
     console.log(`  → [${testCase.id}] "${testCase.message}"`);
-    const result = await runTest(omni, testCase);
+    const result = await runTest(client, testCase);
     results.push(result);
 
     const icon = result.status === 'pass' ? '✅' : result.status === 'timeout' ? '⏱️' : '❌';
