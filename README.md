@@ -67,7 +67,7 @@ AgentQA/
 │       └── index.ts
 ├── .github/
 │   └── workflows/
-│       └── qa.yml                # CI — runs QA suite on every Eugênia change
+│       └── qa.yml                # CI — re-runs QA automatically whenever Eugênia's brain (eugenia-webhook.ts) or test logic changes, ensuring regressions are caught before merging
 ├── scripts/
 │   ├── start-eugenia.sh      # start Eugênia webhook server via WSL/Bun
 │   ├── start-omni.sh         # start Omni API via WSL/Bun
