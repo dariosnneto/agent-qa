@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import type { ScenarioResult, TestResult } from './types';
 import type { OmniClient } from './omni-client';
+import type { TrelloClient } from './trello-client';
 
 function statusIcon(status: TestResult['status']): string {
   switch (status) {
@@ -80,6 +81,7 @@ export async function generateReport(
   scenarioResults: ScenarioResult[],
   omni: OmniClient,
   devPhone: string,
+  trello?: TrelloClient,
 ): Promise<string> {
   const reportsDir = resolve(process.cwd(), 'reports');
   mkdirSync(reportsDir, { recursive: true });
@@ -92,6 +94,31 @@ export async function generateReport(
 
   writeFileSync(filePath, buildMarkdown(scenarioResults), 'utf8');
   console.log(`\n📄 Relatório salvo: ${filePath}`);
+
+  if (trello) {
+    const bugs = scenarioResults.flatMap(sc =>
+      sc.results.filter(r => r.status !== 'pass' && r.fixSuggestion),
+    );
+    let cardCount = 0;
+    for (const bug of bugs) {
+      try {
+        const url = await trello.createBugCard(
+          bug.testCase.id,
+          bug.testCase.message,
+          bug.reason,
+          bug.response,
+          bug.fixSuggestion,
+        );
+        console.log(`🃏 Card criado: ${url}`);
+        cardCount++;
+      } catch (err) {
+        console.warn(`⚠️  Trello [${bug.testCase.id}]: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    if (cardCount > 0) {
+      console.log(`🃏 ${cardCount} card${cardCount !== 1 ? 's' : ''} criado${cardCount !== 1 ? 's' : ''} no Trello`);
+    }
+  }
 
   const summary = buildWhatsAppSummary(scenarioResults, displayPath);
   await omni.sendNotification(devPhone, summary);
