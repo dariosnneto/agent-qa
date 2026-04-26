@@ -34,7 +34,7 @@ export class OmniClient {
     });
 
     if (!this.eugeniaChatId) {
-      this.eugeniaChatId = await this.findChatId(10_000);
+      this.eugeniaChatId = await this.findChatId(30_000);
     }
 
     return this.pollResponse(this.eugeniaChatId, sentAt, timeoutMs);
@@ -52,16 +52,24 @@ export class OmniClient {
    * Retries until timeout because the chat only appears after the first message is sent.
    * Throws if the chat cannot be found — callers should treat this as a setup error, not a timeout.
    */
-  async findChatId(timeoutMs = 10_000): Promise<string> {
+  async findChatId(timeoutMs = 30_000): Promise<string> {
     const phone = this.eugeniaPhone.replace(/\D/g, '');
+    // Brazil mobile numbers may be stored without the leading 9 (old 8-digit format)
+    const phoneAlt = phone.length === 13 ? phone.slice(0, 4) + phone.slice(5) : null;
     const deadline = Date.now() + timeoutMs;
+
+    const matches = (id: string | null) => {
+      if (!id) return false;
+      const digits = id.replace(/\D/g, '');
+      return digits.startsWith(phone) || (phoneAlt !== null && digits.startsWith(phoneAlt));
+    };
 
     while (Date.now() < deadline) {
       const { items } = await this.omni.chats.list({
         instanceId: this.instanceId,
         limit: 50,
       });
-      const chat = items.find(c => c.externalId.startsWith(phone));
+      const chat = items.find(c => matches(c.externalId) || matches(c.canonicalId ?? null));
       if (chat) return chat.id;
       await sleep(1_000);
     }
