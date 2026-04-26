@@ -1,0 +1,76 @@
+name: QA Eugênia
+
+on:
+  push:
+    paths:
+      - 'src/eugenia-webhook.ts'
+      - 'src/index.ts'
+      - 'src/scenarios.ts'
+      - 'src/evaluator.ts'
+  pull_request:
+    paths:
+      - 'src/eugenia-webhook.ts'
+      - 'src/index.ts'
+      - 'src/scenarios.ts'
+      - 'src/evaluator.ts'
+  workflow_dispatch:
+
+jobs:
+  qa:
+    name: Executar testes AgentQA
+    runs-on: ubuntu-latest
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      EUGENIA_WEBHOOK_URL: http://localhost:3001
+      DEV_PHONE: ${{ secrets.DEV_PHONE }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      GITHUB_REPO: ${{ github.repository }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Instalar dependências
+        run: bun install
+
+      - name: Subir servidor Eugênia
+        run: |
+          nohup bun src/eugenia-webhook.ts > /tmp/eugenia.log 2>&1 &
+          echo "EUGENIA_PID=$!" >> $GITHUB_ENV
+
+      - name: Aguardar Eugênia responder
+        run: |
+          for i in $(seq 1 15); do
+            if curl -sf -X POST http://localhost:3001 \
+              -H "Content-Type: application/json" \
+              -d '{"message":"ping","contextMessages":[]}' > /dev/null 2>&1; then
+              echo "Eugênia online ✅"
+              exit 0
+            fi
+            echo "Aguardando... ($i/15)"
+            sleep 1
+          done
+          echo "Eugênia não respondeu ❌"
+          cat /tmp/eugenia.log
+          exit 1
+
+      - name: Executar QA
+        run: bun run src/index.ts
+
+      - name: Logs da Eugênia (em caso de falha)
+        if: failure()
+        run: cat /tmp/eugenia.log
+
+      - name: Upload do relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report-${{ github.run_number }}
+          path: reports/
+          retention-days: 30
