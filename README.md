@@ -74,7 +74,6 @@ AgentQA/
 │   ├── run-qa.sh             # shortcut: bun run src/index.ts
 │   ├── test-webhook.sh       # manual webhook smoke test
 │   └── test-payload.json     # sample payload for manual testing
-├── docs/                     # architecture and setup guides
 ├── reports/                  # generated Markdown reports (gitignored)
 ├── .env.example
 ├── docker-compose-omni.yml
