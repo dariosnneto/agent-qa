@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: omni
       POSTGRES_USER: omni
-      POSTGRES_PASSWORD: omni_password_change_me
+      POSTGRES_PASSWORD: omni_password_change_me # intentionally hardcoded — local testing only, never use in production
     ports:
       - "5433:5432"
     volumes:
