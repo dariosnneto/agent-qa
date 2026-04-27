@@ -49,7 +49,7 @@ export async function setupInstance(baseUrl: string, apiKey: string, existingId?
 
     if (qr) {
       // Omni returns the raw QR string — display it and let the Omni web UI show the image
-      process.stdout.write(`\r📲 QR disponível. Acesse http://localhost:8882 para escanear.`);
+      process.stdout.write(`\r📲 QR ready. Open http://localhost:8882 to scan.`);
     } else {
       process.stdout.write(`\r⏳ ${message}`);
     }

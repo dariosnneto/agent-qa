@@ -107,4 +107,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`Eugênia webhook rodando em http://localhost:${server.port}`);
+console.log(`Eugênia webhook running at http://localhost:${server.port}`);
